@@ -1,5 +1,6 @@
 use tcod::colors::*;
 use tcod::console::*;
+use crate::map::*;
 
 /// this struct houses our player, and contains important information such as position.
 pub struct Character {
@@ -13,9 +14,13 @@ impl Character {
     pub fn new(x: i32, y: i32, literal: char, color: Color) -> Self {
         Character { x, y, literal, color }
     }
-    pub fn set_position(&mut self, dx: i32, dy: i32) {
-        self.x += dx;
-        self.y += dy;
+
+    pub fn set_position(&mut self, dx: i32, dy: i32, map: &Map) {
+        // wall logic
+        if !map[(self.x+dx) as usize][(self.y+dy) as usize].blocked{
+            self.x += dx;
+            self.y += dy;
+        }
     }
     /// characters are able to draw themselves when given a mutable ref to an object that implements console
     pub fn draw(&self, screen: &mut dyn Console) {
