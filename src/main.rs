@@ -1,8 +1,7 @@
 extern crate tcod;
-use tcod::colors::*;
-use tcod::console::*;
 mod app;
-mod player;
+mod character;
+use tcod::colors::*;
 
 ///Some standard constants that we will use throughout the game
 /// Width of the screen.
@@ -16,21 +15,13 @@ fn main() {
     // starting our app
     let mut app = app::Tcod::new(SCREEN_WIDTH, SCREEN_HEIGHT);
     // starting our player 
-    let mut player = player::Player::new(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+    let mut player = character::Character::new(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, '@', WHITE);
+    let mut npc = character::Character::new(SCREEN_WIDTH/3, SCREEN_HEIGHT/3, '@', YELLOW);
+    let characters = vec![&mut player, &mut npc];
 
 
     tcod::system::set_fps(FPS_MAX as i32);
 
-    // this is our game loop, which will be refactored later
-    while !app.root.window_closed() {
-        app.root.set_default_foreground(WHITE);
-        app.root.clear();
-        app.root.put_char(player.x, player.y, '@', BackgroundFlag::None);
-        app.root.flush();
-        let status_exit = app.handle_keys(&mut player);
-        if status_exit == true {
-            break
-        }
-
-    }
+    // initiate the game loop
+    app.game_loop(characters)
 }
