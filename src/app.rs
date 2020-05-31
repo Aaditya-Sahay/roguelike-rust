@@ -2,18 +2,15 @@ use crate::map::*;
 use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::*;
-use rand::Rng;
+
 
 use crate::character::Character;
-use crate::room::Room;
 
 /// height and width of the map
 const MAP_WIDTH: i32 = 80;
 const MAP_HEIGHT: i32 = 45;
 /// Room constants
-const ROOM_MAX_SIZE: i32 = 10;
-const ROOM_MIN_SIZE: i32 = 6;
-const MAX_ROOMS: i32 = 30;
+
 
 ///Color for wall and ground
 const WALL_COLOR: Color = Color { r: 0, g: 0, b: 100 };
@@ -46,7 +43,7 @@ impl Tcod {
 
         
         let mut player = Character::new(25, 23, '@', WHITE);
-        let mut map = Tcod::generate_map(&mut player);
+        let mut map = Mapping::generate_random_map(&mut player);
 
         map[30][22] = Tile::wall();
         map[50][22] = Tile::wall();
@@ -128,62 +125,5 @@ impl Tcod {
             _ => {}
         }
         false
-    }
-
-    /* helper functions will need to refactor them */
-    /// generates a map
-    fn generate_map(player: &mut Character) -> Map {
-        let mut map = Mapping::empty_walled(MAP_WIDTH, MAP_HEIGHT);
-
-        let mut rooms:Vec<Room> = vec![];
-
-        let mut gen = rand::thread_rng();
-
-        for _ in 0..MAX_ROOMS {
-            // random width and height
-            let w = gen.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
-            let h = gen.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
-            // random position without going out of the boundaries of the map
-            let x = gen.gen_range(0, MAP_WIDTH - w);
-            let y = gen.gen_range(0, MAP_HEIGHT - h);
-
-            let new_room = Room::new(x, y, w, h);
-
-            let failed = rooms.iter().any(|room| new_room.intersects_with(room));
-
-            if !failed {
-                Mapping::create_room(&new_room, &mut map);
-            }
-
-            let (new_x, new_y) = new_room.center();
-
-            if rooms.is_empty() {
-
-                player.x = new_x;
-                player.y = new_y;
-            }else {
-                // all rooms after the first:
-                // connect it to the previous room with a tunnel
-            
-                // center coordinates of the previous room
-                let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
-            
-                // toss a coin (random bool value -- either true or false)
-                if rand::random() {
-                    // first move horizontally, then vertically
-                    Mapping::create_tunnel_horizontal(prev_x, new_x, prev_y, &mut map);
-                    Mapping::crete_tunnel_vertical(prev_y, new_y, new_x, &mut map);
-                } else {
-                    // first move vertically, then horizontally
-                    Mapping::crete_tunnel_vertical(prev_y, new_y, prev_x, &mut map);
-                    Mapping::create_tunnel_horizontal(prev_x, new_x, new_y, &mut map);
-                }
-            }
-
-            rooms.push(new_room);
-
-
-        }
-        map
     }
 }

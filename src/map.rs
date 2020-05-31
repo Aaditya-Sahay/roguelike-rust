@@ -1,5 +1,13 @@
 use crate::room::Room;
+use crate::character::Character;
 use std::cmp;
+use rand::Rng;
+
+const ROOM_MAX_SIZE: i32 = 10;
+const ROOM_MIN_SIZE: i32 = 6;
+const MAX_ROOMS: i32 = 30;
+const MAP_WIDTH: i32 = 80;
+const MAP_HEIGHT: i32 = 45;
 /// Will be our tile, this has clone and copy traits
 #[derive(Clone, Copy, Debug)]
 pub struct Tile {
@@ -31,6 +39,52 @@ pub struct Mapping {}
 
 /// implementation of some associated methods that lets us make maps easily
 impl Mapping {
+    pub fn generate_random_map(player: &mut Character) -> Map {
+        let mut map = Mapping::empty_walled(MAP_WIDTH, MAP_HEIGHT);
+
+        let mut rooms:Vec<Room> = vec![];
+
+        let mut gen = rand::thread_rng();
+
+        for _ in 0..MAX_ROOMS {
+            // random width and height
+            let w = gen.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+            let h = gen.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+            // random position without going out of the boundaries of the map
+            let x = gen.gen_range(0, MAP_WIDTH - w);
+            let y = gen.gen_range(0, MAP_HEIGHT - h);
+
+            let new_room = Room::new(x, y, w, h);
+
+            let failed = rooms.iter().any(|room| new_room.intersects_with(room));
+
+            if !failed {
+                Mapping::create_room(&new_room, &mut map);
+            }
+
+            let (new_x, new_y) = new_room.center();
+
+            if rooms.is_empty() {
+
+                player.x = new_x;
+                player.y = new_y;
+            }else {
+                let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
+                if rand::random() {
+                    Mapping::create_tunnel_horizontal(prev_x, new_x, prev_y, &mut map);
+                    Mapping::crete_tunnel_vertical(prev_y, new_y, new_x, &mut map);
+                } else {
+                    Mapping::crete_tunnel_vertical(prev_y, new_y, prev_x, &mut map);
+                    Mapping::create_tunnel_horizontal(prev_x, new_x, new_y, &mut map);
+                }
+            }
+
+            rooms.push(new_room);
+
+
+        }
+        map
+    }
     pub fn empty_walled(width: i32, height: i32) -> Map {
         let map = vec![vec![Tile::wall(); height as usize]; width as usize];
 

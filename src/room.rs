@@ -1,6 +1,6 @@
-
 /// This struct represents rooms of the dungeon
 /// x1, y1, x2, y2 represents the points that will be used to specify dimensions of rectangles
+
 pub struct Room {
     pub x1: i32,
     pub y1: i32,
