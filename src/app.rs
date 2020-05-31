@@ -3,22 +3,10 @@ use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::*;
 
+use tcod::map::{Map as FovMap};
 
 use crate::character::Character;
-
-/// height and width of the map
-const MAP_WIDTH: i32 = 80;
-const MAP_HEIGHT: i32 = 45;
-/// Room constants
-
-
-///Color for wall and ground
-const WALL_COLOR: Color = Color { r: 0, g: 0, b: 100 };
-const GROUND_COLOR: Color = Color {
-    r: 50,
-    g: 50,
-    b: 100,
-};
+use crate::constants::*;
 
 /// This struct houses our game runner
 pub struct Tcod {
@@ -27,6 +15,8 @@ pub struct Tcod {
     pub map: Map,
     pub characters: Vec<Character>,
     pub player: Character,
+    pub fov: FovMap,
+    recompute_fov: bool,
     _width: i32,
     _height: i32,
 }
@@ -39,14 +29,12 @@ impl Tcod {
             .size(width, height)
             .title("Game")
             .init();
+
         let offscreen = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+        let fov = FovMap::new(MAP_WIDTH, MAP_HEIGHT);
 
-        
-        let mut player = Character::new(25, 23, '@', WHITE);
-        let mut map = Mapping::generate_random_map(&mut player);
-
-        map[30][22] = Tile::wall();
-        map[50][22] = Tile::wall();
+        let mut player = Character::new(25, 23, '@', RED);
+        let map = Mapping::generate_random_map(&mut player);
 
         Tcod {
             root,
@@ -54,32 +42,27 @@ impl Tcod {
             map,
             characters,
             player,
+            fov,
+            recompute_fov: true,
             _width: width,
             _height: height,
         }
     }
 
     pub fn game_loop(&mut self) {
+        // anything pre-init can happer here 
+        self.compute_fov();
+
+
         while !self.root.window_closed() {
             self.offscreen.clear();
-
             self.render();
-
-            // combining offscreen with screen
-            blit(
-                &self.offscreen,
-                (0, 0),
-                (MAP_WIDTH, MAP_HEIGHT),
-                &mut self.root,
-                (0, 0),
-                1.0,
-                1.0,
-            );
-
             self.root.flush();
 
             // exit out of the game if warranted
             let status_exit = self.handle_keys();
+        
+
             if status_exit == true {
                 break;
             }
@@ -87,16 +70,38 @@ impl Tcod {
     }
 
     pub fn render(&mut self) {
+        if self.recompute_fov {
+            self.fov.compute_fov(
+                self.player.x,
+                self.player.y,
+                TORCH_RADIUS,
+                FOV_LIGHT_WALLS,
+                FOV_ALGO,
+            );
+        }
+
         for y in 0..MAP_HEIGHT {
             for x in 0..MAP_WIDTH {
+                let visible = self.fov.is_in_fov(x, y);
                 let wall = self.map[x as usize][y as usize].opaque;
-                if wall {
-                    self.offscreen
-                        .set_char_background(x, y, WALL_COLOR, BackgroundFlag::Set);
-                } else {
-                    self.offscreen
-                        .set_char_background(x, y, GROUND_COLOR, BackgroundFlag::Set);
+
+                let color = match (visible, wall) {
+                    (false, true) => WALL_COLOR,
+                    (true, true) => LIT_WALL_COLOR,
+                    (true, false) => LIT_GROUND_COLOR,
+                    (false, false) => GROUND_COLOR,
+                };
+                let explored = &mut self.map[x as usize][y as usize].explored;
+
+                if visible {
+                    *explored = true;
                 }
+                if *explored {
+                    // show explored tiles only (any visible tile is explored already)
+                    self.offscreen
+                        .set_char_background(x, y, color, BackgroundFlag::Set);
+                }
+             
             }
         }
 
@@ -105,10 +110,22 @@ impl Tcod {
         for character in self.characters.iter() {
             character.draw(&mut self.offscreen)
         }
+
+        blit(
+            &self.offscreen,
+            (0, 0),
+            (MAP_WIDTH, MAP_HEIGHT),
+            &mut self.root,
+            (0, 0),
+            1.0,
+            1.0,
+        );
     }
 
     pub fn handle_keys(&mut self) -> bool {
         let key: Key = self.root.wait_for_keypress(true);
+
+        self.recompute_fov = true;
         match key.code {
             KeyCode::Enter => {
                 if key.alt == true {
@@ -125,5 +142,18 @@ impl Tcod {
             _ => {}
         }
         false
+    }
+
+    fn compute_fov(&mut self) {
+        for y in 0..MAP_HEIGHT {
+            for x in 0..MAP_WIDTH {
+                self.fov.set(
+                    x,
+                    y,
+                    !self.map[x as usize][y as usize].opaque,
+                    !self.map[x as usize][y as usize].blocked,
+                )
+            }
+        }
     }
 }

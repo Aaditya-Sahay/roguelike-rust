@@ -5,15 +5,12 @@ mod app;
 mod character;
 mod map;
 mod room;
+mod constants;
 
 
 ///Some standard constants that we will use throughout the game
 /// Width of the screen.
-const SCREEN_WIDTH: i32 = 80;
-/// Height of the screen
-const SCREEN_HEIGHT: i32 = 60;
-/// Maximum frames per second
-const FPS_MAX: i32 = 60;
+use constants::*;
 
 
 

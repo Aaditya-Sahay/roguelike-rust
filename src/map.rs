@@ -3,16 +3,13 @@ use crate::character::Character;
 use std::cmp;
 use rand::Rng;
 
-const ROOM_MAX_SIZE: i32 = 10;
-const ROOM_MIN_SIZE: i32 = 6;
-const MAX_ROOMS: i32 = 30;
-const MAP_WIDTH: i32 = 80;
-const MAP_HEIGHT: i32 = 45;
+use crate::constants::*;
 /// Will be our tile, this has clone and copy traits
 #[derive(Clone, Copy, Debug)]
 pub struct Tile {
     pub blocked: bool,
     pub opaque: bool,
+    pub explored: bool,
 }
 
 impl Tile {
@@ -20,6 +17,7 @@ impl Tile {
     pub fn empty() -> Self {
         Tile {
             blocked: false,
+            explored: false,
             opaque: false,
         }
     }
@@ -27,6 +25,7 @@ impl Tile {
     pub fn wall() -> Self {
         Tile {
             blocked: true,
+            explored: false,
             opaque: true,
         }
     }
@@ -72,9 +71,9 @@ impl Mapping {
                 let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
                 if rand::random() {
                     Mapping::create_tunnel_horizontal(prev_x, new_x, prev_y, &mut map);
-                    Mapping::crete_tunnel_vertical(prev_y, new_y, new_x, &mut map);
+                    Mapping::create_tunnel_vertical(prev_y, new_y, new_x, &mut map);
                 } else {
-                    Mapping::crete_tunnel_vertical(prev_y, new_y, prev_x, &mut map);
+                    Mapping::create_tunnel_vertical(prev_y, new_y, prev_x, &mut map);
                     Mapping::create_tunnel_horizontal(prev_x, new_x, new_y, &mut map);
                 }
             }
@@ -103,7 +102,7 @@ impl Mapping {
         }
     }
 
-    pub fn crete_tunnel_vertical(y1: i32, y2: i32, x: i32, map: &mut Map) {
+    pub fn create_tunnel_vertical(y1: i32, y2: i32, x: i32, map: &mut Map) {
         for y in cmp::min(y1, y2)..(cmp::max(y1, y2) + 1) {
             map[x as usize][y as usize] = Tile::empty();
         }
