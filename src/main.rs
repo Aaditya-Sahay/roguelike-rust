@@ -21,9 +21,9 @@ fn main() {
     
     // let npc = character::Character::new(SCREEN_WIDTH / 3, SCREEN_HEIGHT / 3, '@', YELLOW);
     // let npc_two = character::Character::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4, '@', RED);
-    let characters = vec![];
+    
 
-    let mut app = app::Tcod::new(SCREEN_WIDTH, SCREEN_HEIGHT, characters);
+    let mut app = app::Tcod::new(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // limit max fps count
     tcod::system::set_fps(FPS_MAX);

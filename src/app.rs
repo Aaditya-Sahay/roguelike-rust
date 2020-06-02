@@ -3,7 +3,7 @@ use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::*;
 
-use tcod::map::{Map as FovMap};
+use tcod::map::Map as FovMap;
 
 use crate::character::Character;
 use crate::constants::*;
@@ -22,7 +22,7 @@ pub struct Tcod {
 }
 
 impl Tcod {
-    pub fn new(width: i32, height: i32, characters: Vec<Character>) -> Tcod {
+    pub fn new(width: i32, height: i32) -> Tcod {
         let root = Root::initializer()
             .font("assets/consolas10x10_gs_tc.png", FontLayout::Tcod)
             .font_type(FontType::Greyscale)
@@ -34,8 +34,10 @@ impl Tcod {
         let fov = FovMap::new(MAP_WIDTH, MAP_HEIGHT);
 
         let mut player = Character::new(25, 23, '@', RED);
-        let map = Mapping::generate_random_map(&mut player);
+        let mut characters:Vec<Character> = vec![];
+        let map = Mapping::generate_random_map(&mut player, &mut characters);
 
+    
         Tcod {
             root,
             offscreen,

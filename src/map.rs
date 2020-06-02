@@ -1,5 +1,6 @@
 use crate::room::Room;
 use crate::character::Character;
+use tcod::colors::*;
 use std::cmp;
 use rand::Rng;
 
@@ -38,7 +39,7 @@ pub struct Mapping {}
 
 /// implementation of some associated methods that lets us make maps easily
 impl Mapping {
-    pub fn generate_random_map(player: &mut Character) -> Map {
+    pub fn generate_random_map(player: &mut Character, characters:&mut Vec<Character>) -> Map {
         let mut map = Mapping::empty_walled(MAP_WIDTH, MAP_HEIGHT);
 
         let mut rooms:Vec<Room> = vec![];
@@ -60,6 +61,8 @@ impl Mapping {
             if !failed {
                 Mapping::create_room(&new_room, &mut map);
             }
+
+            Mapping::place_characters(&new_room, &map, characters);
 
             let (new_x, new_y) = new_room.center();
 
@@ -106,5 +109,36 @@ impl Mapping {
         for y in cmp::min(y1, y2)..(cmp::max(y1, y2) + 1) {
             map[x as usize][y as usize] = Tile::empty();
         }
+    }
+    /// this function places a bunch of characters aroound the map, it exists here as a part of mapping because I feel it still belongs as a process of map generation
+    pub fn place_characters(room: &Room, map: &Map, characters:&mut Vec<Character>) {
+        let mut gen = rand::thread_rng();
+        let num_monsters =  gen.gen_range(0, MAX_ROOM_MONSTERS);
+        for _ in 0..=num_monsters {
+            let x = gen.gen_range(room.x1 + 1, room.x2 - 1);
+            let y = gen.gen_range(room.y1 + 1, room.y2 - 1);
+            
+            if !Mapping::is_blocked(x,y, map, characters.as_ref()) {
+                let monster = if rand::random::<f32>() < 0.7 {  // 80% chance of getting an orc
+                    // create an orc
+                    Character::new(x, y, 'O', DESATURATED_GREEN)
+                } else {
+                    Character::new(x, y, 'T', DARKER_GREEN)
+                };
+    
+                characters.push(monster);
+            }
+            
+        }
+    }
+    fn is_blocked(x: i32, y: i32, map: &Map, characters: &Vec<Character>) -> bool {
+        // first test the map tile
+        if map[x as usize][y as usize].blocked {
+            return true;
+        }
+        // now check for any blocking objects
+        characters
+            .iter()
+            .any(|object| object.block && object.get_pos() == (x, y))
     }
 }

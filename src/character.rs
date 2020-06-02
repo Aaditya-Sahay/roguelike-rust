@@ -8,11 +8,12 @@ pub struct Character {
     pub y: i32,
     pub literal: char,
     pub color: Color,
+    pub block: bool,
 
 }
 impl Character {
     pub fn new(x: i32, y: i32, literal: char, color: Color) -> Self {
-        Character { x, y, literal, color }
+        Character { x, y, literal, block:false, color }
     }
 
     pub fn set_position(&mut self, dx: i32, dy: i32, map: &Map) {
@@ -28,4 +29,7 @@ impl Character {
         screen.put_char(self.x, self.y, self.literal, BackgroundFlag::None);
     }
     
+    pub fn get_pos(&self) -> (i32, i32) {
+        (self.x, self.y)
+    }
 }
