@@ -121,9 +121,9 @@ impl Mapping {
             if !Mapping::is_blocked(x,y, map, characters.as_ref()) {
                 let monster = if rand::random::<f32>() < 0.7 {  // 80% chance of getting an orc
                     // create an orc
-                    Character::new(x, y, 'O', DESATURATED_GREEN)
+                    Character::new(x, y, 'O', DESATURATED_BLUE)
                 } else {
-                    Character::new(x, y, 'T', DARKER_GREEN)
+                    Character::new(x, y, 'T', DARKEST_BLUE)
                 };
     
                 characters.push(monster);

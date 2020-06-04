@@ -6,6 +6,7 @@ use tcod::input::*;
 use tcod::map::Map as FovMap;
 
 use crate::character::Character;
+use crate::character::PlayerActions;
 use crate::constants::*;
 
 /// This struct houses our game runner
@@ -62,10 +63,10 @@ impl Tcod {
             self.root.flush();
 
             // exit out of the game if warranted
-            let status_exit = self.handle_keys();
+            let action = self.handle_keys();
         
 
-            if status_exit == true {
+            if action == PlayerActions::Exit {
                 break;
             }
         }
@@ -110,7 +111,11 @@ impl Tcod {
         self.player.draw(&mut self.offscreen);
         // drawing all characters
         for character in self.characters.iter() {
-            character.draw(&mut self.offscreen)
+            if self.fov.is_in_fov(character.x, character.y) {
+                character.draw(&mut self.offscreen)
+            }
+            
+           
         }
 
         blit(
@@ -124,26 +129,27 @@ impl Tcod {
         );
     }
 
-    pub fn handle_keys(&mut self) -> bool {
+    pub fn handle_keys(&mut self) -> PlayerActions {
         let key: Key = self.root.wait_for_keypress(true);
-
         self.recompute_fov = true;
-        match key.code {
-            KeyCode::Enter => {
+
+        match (key.code, self.player.alive) {
+            (KeyCode::Enter, _) => {
                 if key.alt == true {
                     let fullscreen = self.root.is_fullscreen();
                     self.root.set_fullscreen(!fullscreen)
                 }
-            }
-            KeyCode::Escape => return true,
-            KeyCode::Up => self.player.set_position(0, -1, &self.map),
-            KeyCode::Down => self.player.set_position(0, 1, &self.map),
-            KeyCode::Left => self.player.set_position(-1, 0, &self.map),
-            KeyCode::Right => self.player.set_position(1, 0, &self.map),
+                PlayerActions::DidNothing
+            },
+            (KeyCode::Escape,_) => PlayerActions::Exit,
+            (KeyCode::Up, true) =>   { self.player.set_position(0, -1, &self.map); PlayerActions::TookTurn} ,
+            (KeyCode::Down, true) => { self.player.set_position(0, 1, &self.map); PlayerActions::TookTurn },
+            (KeyCode::Left, true) => {self.player.set_position(-1, 0, &self.map); PlayerActions::TookTurn},
+            (KeyCode::Right, true) => {self.player.set_position(1, 0, &self.map); PlayerActions::TookTurn},
 
-            _ => {}
+            _ => PlayerActions::DidNothing
         }
-        false
+
     }
 
     fn compute_fov(&mut self) {
